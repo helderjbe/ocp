@@ -209,3 +209,8 @@ plt.ylabel('Efficiency (%)')
 plt.grid(True)
 print ('Saving...')
 plt.savefig('sim-master-efficiency.jpg', bbox_inches='tight')
+
+'''
+MatPlotLib
+Copyright (c) 2012-2013 Matplotlib Development Team; All Rights Reserved
+'''

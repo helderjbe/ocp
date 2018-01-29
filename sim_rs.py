@@ -112,3 +112,8 @@ for nfig in range(len(nkarr)):
     print ('Saving...')
     plt.savefig(('sim-rs-%d-inc.jpg' % nfig), bbox_inches='tight')
     #plt.savefig(('sim-rs-%d-header-arq-inc.jpg' % nfig), bbox_inches='tight')
+	
+'''
+MatPlotLib
+Copyright (c) 2012-2013 Matplotlib Development Team; All Rights Reserved
+'''

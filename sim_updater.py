@@ -162,3 +162,8 @@ plt.ylabel('N-K FEC bytes')
 plt.grid(True)
 print ('Saving...')
 plt.savefig('sim-updater-FEC.jpg', bbox_inches='tight')
+
+'''
+MatPlotLib
+Copyright (c) 2012-2013 Matplotlib Development Team; All Rights Reserved
+'''

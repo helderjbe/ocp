@@ -230,6 +230,9 @@ def hread(tout):
 # val: amount of bytes to read
 # returns: packet read, error or None
 def pread(val):
+    # If it's a retransmission, pass the value to 2
+    if val == 3:
+        val = 2
     start = time.time()
     while time.time() - start < TOUT_recv:
         if ser.inWaiting() >= val:
@@ -256,6 +259,7 @@ def terminator(mode):
 def get_data(header, file=None):
     seq_last=int(100) # Random number different from 1
     buffer=[]
+    retr_seq = 0 # Retransmission sequence
     
     while True:
         # Test if there was no error in request sent
@@ -267,6 +271,7 @@ def get_data(header, file=None):
             ser.flushInput()
             ser.write(nak_pack)
             header=hread(TOUT_recv)
+            continue
         elif 6 < header < 9:
             # It is an ACK or a NAK
             print("In function get_data: Expected data, ARQ response found")
@@ -283,10 +288,12 @@ def get_data(header, file=None):
             logging.critical("In function get_data: Expected packet")
             return None
         
-        if header == 2:
+        # Check if it's a retransmission
+        if 2 <= header <= 3:
             # It's a retransmission
-            packet += temp
-            header = len(packet)
+            if retr_seq != header: # Append the FEC symbols only if the sequence is different from the last one
+                packet += temp
+                header = len(packet)
         else:
             packet = temp
         
@@ -360,7 +367,7 @@ def get_data(header, file=None):
             elif header=='Error':
                 ser.flushInput()
                 ser.write(nak_pack)
-                header=hread(TOUT_recv)
+                continue
             elif 6 < header < 9:
                 # It is an ACK or a NAK
                 print("In function get_data: Expected data, ARQ response found")
@@ -495,8 +502,8 @@ def send(stream, length):
                     fec_packet = first_packet[0:-(18-fec_bytes)]
             # From this block get: packet (final packet containing seq + msg + cobs + fec
             
-            # Add header according to packet
-            packet=reedsolo.rs_encode_msg(chr(len(fec_packet)), 2, 0, 2, gen[2])
+            # Add header according to packet (alternate as the seq number for retransmissions)
+            packet=reedsolo.rs_encode_msg(chr(len(fec_packet)+(nak_count%2)), 2, 0, 2, gen[2])
             packet.extend(fec_packet)
             
             #sim
@@ -615,15 +622,3 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         shutdown()
-		
-'''
-PySerial
-Copyright (c) 2001-2015 Chris Liechti <cliechti@gmx.net> All Rights Reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-'''
